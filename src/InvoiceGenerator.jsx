@@ -208,7 +208,7 @@ function InvoicePrintBody({data}){
           {supplierTIN&&<div className="pi-party-tin">TIN: {supplierTIN}</div>}
           {supplierAddress&&<div className="pi-party-addr">{supplierAddress}</div>}
           {supplierEmail&&<div className="pi-party-contact">✉ {supplierEmail}</div>}
-          {supplierPhone&&<div className="pi-party-contact">📞 {supplierPhone}</div>}
+          {supplierPhone&&<div className="pi-party-contact">✆ {supplierPhone}</div>}
         </div>
         <div>
           <div className="pi-party-label">Bill To</div>
