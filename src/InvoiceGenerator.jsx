@@ -82,24 +82,16 @@ function LineItemRow({item,sym,onUpdate,onRemove}){
 
 // ── PDF Preview Modal ──────────────────────────────────────────────────────
 function PdfModal({onClose, data}){
-  const {
-    sym, currencyCode, logoSrc,
-    supplierName, supplierTIN, supplierAddress, supplierEmail, supplierPhone,
-    purchaserName, purchaserTIN, purchaserAddress,
-    fullSerial, invoiceDate, supplyDate, dueDate,
-    items, subtotal, discAmt, shipVal, valueExclVAT, vatRate, vatAmt, grandTotal,
-    notes, paymentMode, placeOfSupply,
-  } = data;
-
   const printAreaRef = useRef();
 
   const handleDownload = () => {
     const printWindow = window.open("","_blank","width=900,height=700");
+    const closeScript = "window.onload=function(){window.print();window.onafterprint=function(){window.close();};};";
     const html = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>Tax Invoice ${fullSerial}</title>
+<title>Tax Invoice</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
   @page { size: A4; margin: 14mm 14mm 14mm 14mm; }
@@ -110,9 +102,7 @@ function PdfModal({onClose, data}){
 </head>
 <body>
 ${printAreaRef.current.innerHTML}
-<script>
-  window.onload = function(){ window.print(); window.onafterprint = function(){ window.close(); }; };
-<\/script>
+<script>${closeScript}</script>
 </body>
 </html>`;
     printWindow.document.write(html);
