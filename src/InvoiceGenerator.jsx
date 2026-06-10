@@ -83,30 +83,51 @@ function LineItemRow({item,sym,onUpdate,onRemove}){
 // ── PDF Preview Modal ──────────────────────────────────────────────────────
 function PdfModal({onClose, data}){
   const printAreaRef = useRef();
+  const [downloading, setDownloading] = useState(false);
 
-  const handleDownload = () => {
-    const printWindow = window.open("","_blank","width=900,height=700");
-    const closeScript = "window.onload=function(){window.print();window.onafterprint=function(){window.close();};};";
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<title>Tax Invoice</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
-  @page { size: A4; margin: 14mm 14mm 14mm 14mm; }
-  * { box-sizing: border-box; margin:0; padding:0; }
-  body { font-family: 'DM Sans', sans-serif; color: #0f2a5c; font-size: 12px; background: white; }
-  ${getInvoiceCSS()}
-</style>
-</head>
-<body>
-${printAreaRef.current.innerHTML}
-<script>${closeScript}</script>
-</body>
-</html>`;
-    printWindow.document.write(html);
-    printWindow.document.close();
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+
+    // Load html2pdf.js from CDN if not already loaded
+    if (!window.html2pdf) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    // Clone the print area so we can inject fonts + styles without affecting the preview
+    const clone = printAreaRef.current.cloneNode(true);
+
+    // Inject a style tag with the invoice CSS into the clone's wrapper
+    const styleEl = document.createElement("style");
+    styleEl.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'DM Sans', sans-serif; color: #0f2a5c; font-size: 12px; background: white; }
+      ${getInvoiceCSS()}
+    `;
+    clone.insertBefore(styleEl, clone.firstChild);
+
+    const invoiceNumber = data.fullSerial || "invoice";
+
+    const opt = {
+      margin:       [14, 14, 14, 14], // mm: top, left, bottom, right
+      filename:     `${invoiceNumber}.pdf`,
+      image:        { type: "jpeg", quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    try {
+      await window.html2pdf().set(opt).from(clone).save();
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return(
@@ -115,8 +136,8 @@ ${printAreaRef.current.innerHTML}
       <div style={{width:"100%",maxWidth:780,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
         <span style={{color:"white",fontWeight:600,fontSize:15,fontFamily:"DM Sans, sans-serif"}}>Invoice Preview</span>
         <div style={{display:"flex",gap:10}}>
-          <button onClick={handleDownload} style={{background:"#2563eb",color:"white",border:"none",borderRadius:8,padding:"9px 22px",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"DM Sans, sans-serif",display:"flex",alignItems:"center",gap:7}}>
-            ⬇ Download PDF
+          <button onClick={handleDownload} disabled={downloading} style={{background: downloading ? "#93afd4" : "#2563eb",color:"white",border:"none",borderRadius:8,padding:"9px 22px",fontSize:14,fontWeight:600,cursor: downloading ? "not-allowed" : "pointer",fontFamily:"DM Sans, sans-serif",display:"flex",alignItems:"center",gap:7}}>
+            {downloading ? "⏳ Generating…" : "⬇ Download PDF"}
           </button>
           <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",color:"white",border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,padding:"9px 18px",fontSize:14,cursor:"pointer",fontFamily:"DM Sans, sans-serif"}}>
             ✕ Close
