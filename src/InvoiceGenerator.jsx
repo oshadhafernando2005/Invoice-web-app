@@ -436,7 +436,7 @@ export default function InvoiceGenerator() {
       <div className="ig-page">
         <div className="ig-card">
           <div className="ig-toolbar">
-            <span className="ig-brand">InvoiceForge</span>
+            <span className="ig-brand">Free Tax Invoice Generator powered by Brisca</span>
             <div className="ig-toolbar-right">
               <select className="ig-cur-select" value={currencyCode} onChange={e=>setCurrencyCode(e.target.value)}>
                 {CURRENCIES.map(c=><option key={c.code} value={c.code}>{c.code}</option>)}
